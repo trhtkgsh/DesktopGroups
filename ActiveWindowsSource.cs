@@ -120,6 +120,7 @@ public sealed class ActiveWindowsSource
         if (NativeMethods.GetWindowTextLength(hwnd) == 0) return false;
         if (IsCloaked(hwnd)) return false;
         if (IgnoredClasses.Contains(GetClassName(hwnd))) return false;
+        if (BrowserSource.BrowserExe(hwnd) is not null) return false;
 
         NativeMethods.GetWindowThreadProcessId(hwnd, out var processId);
         if (processId == ownProcessId) return false;
@@ -136,10 +137,10 @@ public sealed class ActiveWindowsSource
         return true;
     }
 
-    private static bool IsCloaked(IntPtr hwnd) =>
+    internal static bool IsCloaked(IntPtr hwnd) =>
         NativeMethods.DwmGetWindowAttribute(hwnd, NativeMethods.DwmwaCloaked, out var cloaked, sizeof(int)) == 0 && cloaked != 0;
 
-    private static string GetTitle(IntPtr hwnd)
+    internal static string GetTitle(IntPtr hwnd)
     {
         var length = NativeMethods.GetWindowTextLength(hwnd);
         var buffer = new StringBuilder(length + 1);
@@ -147,14 +148,14 @@ public sealed class ActiveWindowsSource
         return buffer.ToString();
     }
 
-    private static string GetClassName(IntPtr hwnd)
+    internal static string GetClassName(IntPtr hwnd)
     {
         var buffer = new StringBuilder(256);
         var length = NativeMethods.GetClassName(hwnd, buffer, buffer.Capacity);
         return length > 0 ? buffer.ToString(0, length) : "";
     }
 
-    private static string GetExePath(IntPtr hwnd)
+    internal static string GetExePath(IntPtr hwnd)
     {
         NativeMethods.GetWindowThreadProcessId(hwnd, out var processId);
         var process = NativeMethods.OpenProcess(NativeMethods.ProcessQueryLimitedInformation, false, processId);

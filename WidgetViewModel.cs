@@ -24,6 +24,7 @@ public partial class WidgetViewModel : ObservableObject
     private readonly ValueAnimator textSizeAnimator;
     private readonly ValueAnimator opacityAnimator;
     private readonly ActiveWindowsSource activeWindows = new();
+    private readonly BrowserSource browsers;
     private readonly DispatcherTimer recycleBinTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private bool? recycleBinEmpty;
 
@@ -35,12 +36,14 @@ public partial class WidgetViewModel : ObservableObject
         iconSizeAnimator = new ValueAnimator(v => IconSize = v);
         textSizeAnimator = new ValueAnimator(v => TextSize = v);
         opacityAnimator = new ValueAnimator(v => GroupOpacity = v);
+        browsers = new BrowserSource(activeWindows.Groups);
 
         Board.PropertyChanged += OnBoardPropertyChanged;
         UpdateSizes(snap: true);
         UpdateOpacity(snap: true);
         IsVertical = Board.GroupLayout == GroupLayout.Vertical;
         activeWindows.Start();
+        browsers.Start();
 
         recycleBinTimer.Tick += (_, _) => RefreshRecycleBinIcons();
         recycleBinTimer.Start();
@@ -132,6 +135,14 @@ public partial class WidgetViewModel : ObservableObject
             return;
         }
 
+        if (item.BrowserHandle != IntPtr.Zero)
+        {
+            BrowserSource.SelectTab(item.BrowserHandle, item.Name);
+            ActiveWindowsSource.Activate(item.BrowserHandle);
+            ProgramStarted?.Invoke();
+            return;
+        }
+
         if (item.WindowHandle != IntPtr.Zero)
         {
             ActiveWindowsSource.Activate(item.WindowHandle);
@@ -215,6 +226,14 @@ public partial class WidgetViewModel : ObservableObject
         if (item is null || !item.IsWindow) return;
 
         ActiveWindowsSource.CloseWindow(item.WindowHandle);
+    }
+
+    [RelayCommand]
+    private void CloseBrowser(ShortcutGroup? group)
+    {
+        if (group is null || !group.IsBrowser) return;
+
+        ActiveWindowsSource.CloseWindow(group.BrowserHandle);
     }
 
     [RelayCommand]

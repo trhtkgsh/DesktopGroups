@@ -116,9 +116,27 @@
                 <StackPanel MinWidth="200">
 
                     <Border Background="{Binding AccentBrush}" Padding="12,8" CornerRadius="8,8,0,0">
-                        <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="{Binding Color, Converter={StaticResource HexToBrush}, ConverterParameter=text}"
-                                   HorizontalAlignment="Center" />
+                        <Grid>
+                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{Binding Color, Converter={StaticResource HexToBrush}, ConverterParameter=text}"
+                                       HorizontalAlignment="Center" />
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="4,2" Cursor="Hand"
+                                    Background="Transparent" CornerRadius="4"
+                                    ToolTip="סגור דפדפן זה" MouseLeftButtonDown="CloseBrowserAction_MouseDown">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBrowser}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ActionGlyphStyle}"
+                                           FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            </Border>
+                        </Grid>
                     </Border>
                     <ItemsControl Margin="4" ItemsSource="{Binding Items}">
                         <ItemsControl.ItemTemplate>
@@ -140,6 +158,17 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
+                                    <Border CornerRadius="6" BorderThickness="0" BorderBrush="Transparent">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActiveTab}" Value="True">
+                                                        <Setter Property="BorderThickness" Value="2" />
+                                                        <Setter Property="BorderBrush" Value="{Binding Tag.AccentBrush, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" Style="{StaticResource RowLayoutStyle}">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -193,7 +222,7 @@
                                                    Width="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    Height="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    Source="{Binding Icon}" />
-                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                            <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"
                                                        FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                                        TextTrimming="CharacterEllipsis" MaxWidth="480" />
                                         </StackPanel>
@@ -202,10 +231,11 @@
                                                    Width="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    Height="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    Source="{Binding Icon}" />
-                                            <TextBlock Text="{Binding Name}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="140"
+                                            <TextBlock Text="{Binding DisplayName}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="140"
                                                        FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
                                         </StackPanel>
                                     </Grid>
+                                    </Border>
                                 </Button>
                                 <ItemsControl ItemsSource="{Binding DataContext.PowerSubmenuItems, RelativeSource={RelativeSource AncestorType=Window}}"
                                               HorizontalAlignment="Center" Margin="0,0,0,4">

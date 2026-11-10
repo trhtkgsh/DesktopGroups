@@ -133,6 +133,13 @@ public partial class ShortcutGroup : ObservableObject
 
     public ObservableCollection<ShortcutItem> Items { get; set; } = [];
 
+    // Set only for the runtime groups of open browser windows; such groups are never saved.
+    [JsonIgnore]
+    public IntPtr BrowserHandle { get; set; }
+
+    [JsonIgnore]
+    public bool IsBrowser => BrowserHandle != IntPtr.Zero;
+
     // Solid color used for headers, borders and pressed state.
     [JsonIgnore]
     public Brush AccentBrush { get => accentBrush; private set => SetProperty(ref accentBrush, value); }
@@ -193,7 +200,21 @@ public partial class ShortcutItem : ObservableObject
     [ObservableProperty, JsonIgnore]
     private bool isSubmenuOpen;
 
+    // Runtime state of a browser tab item: true for the tab currently shown in its window; never saved.
+    [ObservableProperty, JsonIgnore]
+    private bool isActiveTab;
+
     partial void OnTargetPathChanged(string value) => OnPropertyChanged(nameof(IsRecycleBin));
+
+    private const int MaxBrowserTabTitleLength = 40;
+
+    // Long browser tab titles are cut for display only; the full name is kept for matching the tab on click.
+    [JsonIgnore]
+    public string DisplayName => BrowserHandle != IntPtr.Zero && Name.Length > MaxBrowserTabTitleLength
+        ? Name[..MaxBrowserTabTitleLength] + "…"
+        : Name;
+
+    partial void OnNameChanged(string value) => OnPropertyChanged(nameof(DisplayName));
 
     // Set only for items of the runtime "active windows" group; such items are never saved.
     [JsonIgnore]
@@ -208,6 +229,10 @@ public partial class ShortcutItem : ObservableObject
 
     [JsonIgnore]
     public bool IsWindow => WindowHandle != IntPtr.Zero;
+
+    // Set only for tab items of a browser group, holding the browser window that owns the tab; never saved.
+    [JsonIgnore]
+    public IntPtr BrowserHandle { get; set; }
 
     [JsonIgnore]
     public ImageSource? Icon { get => icon; private set => SetProperty(ref icon, value); }
@@ -228,4 +253,7 @@ public partial class ShortcutItem : ObservableObject
         }
         Icon = IconHelper.Load(this);
     }
+
+    // Sets an icon that does not come from a file, such as a browser tab's favicon; the icon is not saved.
+    public void SetRuntimeIcon(ImageSource? image) => Icon = image;
 }

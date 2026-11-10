@@ -121,6 +121,12 @@ public partial class WidgetWindow : Window
         _viewModel.CloseWindowCommand.Execute((sender as FrameworkElement)?.DataContext as ShortcutItem);
     }
 
+    private void CloseBrowserAction_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        _viewModel.CloseBrowserCommand.Execute((sender as FrameworkElement)?.DataContext as ShortcutGroup);
+    }
+
     private void EndProcessAction_MouseDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
