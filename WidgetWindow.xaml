@@ -1,0 +1,260 @@
+<Window x:Class="DesktopGroups.WidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DesktopGroups"
+        Title="מרחב הקיצורים"
+        x:Name="WidgetRoot"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        FontFamily="Segoe UI Variable Display, Segoe UI"
+        FlowDirection="RightToLeft">
+    <Window.Resources>
+        <local:HexToBrushConverter x:Key="HexToBrush" />
+        <ContextMenu x:Key="RecycleBinContextMenu" FlowDirection="RightToLeft">
+            <MenuItem Header="רוקן סל מחזור" Click="EmptyRecycleBinMenu_Click" />
+            <Separator />
+            <MenuItem Header="הגדרות" Click="OpenManagerMenu_Click" />
+            <MenuItem Header="סגור תוכנית" Click="CloseAppMenu_Click" />
+        </ContextMenu>
+        <ContextMenu x:Key="WindowContextMenu" FlowDirection="RightToLeft">
+            <MenuItem Header="סגור תוכנית זו" Click="CloseWindowMenu_Click" />
+            <MenuItem Header="סיים תהליך" Click="EndProcessMenu_Click" />
+            <Separator />
+            <MenuItem Header="הגדרות" Click="OpenManagerMenu_Click" />
+            <MenuItem Header="סגור תוכנית" Click="CloseAppMenu_Click" />
+        </ContextMenu>
+        <Style x:Key="PowerItemStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Surface" Margin="3,2" Padding="8,6" CornerRadius="6"
+                                BorderThickness="2" BorderBrush="Transparent" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background"
+                                        Value="{Binding DataContext.PowerHoverBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Surface" Property="BorderBrush"
+                                        Value="{Binding DataContext.PowerStrongBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ActionGlyphStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FF1F1F1F" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                    <Setter Property="Foreground" Value="#FFD13438" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ShortcutItemStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="#FF1F1F1F" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Surface" Margin="4,2" Padding="8,6" CornerRadius="6"
+                                BorderThickness="2" BorderBrush="Transparent"
+                                Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background"
+                                        Value="{Binding Tag.SoftBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Surface" Property="BorderBrush"
+                                        Value="{Binding Tag.AccentBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="RowLayoutStyle" TargetType="StackPanel">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.ItemDisplayMode, RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="{x:Static local:ItemDisplayMode.IconWithCaption}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="CaptionLayoutStyle" TargetType="StackPanel">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.ItemDisplayMode, RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="{x:Static local:ItemDisplayMode.IconWithCaption}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <DataTemplate x:Key="GroupCardTemplate">
+            <Border Margin="10" CornerRadius="10" BorderThickness="2" ClipToBounds="True"
+                    BorderBrush="{Binding AccentBrush}" Background="#F7F7F7"
+                    Opacity="{Binding DataContext.GroupOpacity, RelativeSource={RelativeSource AncestorType=Window}}">
+                <Border.ContextMenu>
+                    <ContextMenu FlowDirection="RightToLeft">
+                        <MenuItem Header="הגדרות" Click="OpenManagerMenu_Click" />
+                        <Separator />
+                        <MenuItem Header="סגור תוכנית" Click="CloseAppMenu_Click" />
+                    </ContextMenu>
+                </Border.ContextMenu>
+                <StackPanel MinWidth="200">
+
+                    <Border Background="{Binding AccentBrush}" Padding="12,8" CornerRadius="8,8,0,0">
+                        <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{Binding Color, Converter={StaticResource HexToBrush}, ConverterParameter=text}"
+                                   HorizontalAlignment="Center" />
+                    </Border>
+                    <ItemsControl Margin="4" ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                <Button Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="{Binding TargetPath}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource ShortcutItemStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRecycleBin}" Value="True">
+                                                    <Setter Property="ContextMenu" Value="{StaticResource RecycleBinContextMenu}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsWindow}" Value="True">
+                                                    <Setter Property="ContextMenu" Value="{StaticResource WindowContextMenu}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Style="{StaticResource RowLayoutStyle}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Padding="4,2" Margin="0,0,4,0" Cursor="Hand" Background="Transparent" CornerRadius="4"
+                                                        ToolTip="סגור תוכנית זו" MouseLeftButtonDown="CloseWindowAction_MouseDown">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsWindow}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ActionGlyphStyle}"
+                                                               FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                </Border>
+                                                <Border Padding="4,2" Margin="0,0,4,0" Cursor="Hand" Background="Transparent" CornerRadius="4"
+                                                        ToolTip="סיים תהליך" MouseLeftButtonDown="EndProcessAction_MouseDown">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsWindow}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="&#x26D4;" FontFamily="Segoe UI Emoji" Style="{StaticResource ActionGlyphStyle}"
+                                                               FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                </Border>
+                                                <Border Padding="4,2" Margin="0,0,4,0" Cursor="Hand" Background="Transparent" CornerRadius="4"
+                                                        ToolTip="רוקן סל מחזור" MouseLeftButtonDown="EmptyRecycleBinAction_MouseDown">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsRecycleBin}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ActionGlyphStyle}"
+                                                               FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <Image Margin="0,0,10,0"
+                                                   Width="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Height="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Source="{Binding Icon}" />
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                       FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="480" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Style="{StaticResource CaptionLayoutStyle}">
+                                            <Image HorizontalAlignment="Center" Margin="0,0,0,4"
+                                                   Width="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Height="{Binding DataContext.IconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Source="{Binding Icon}" />
+                                            <TextBlock Text="{Binding Name}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="140"
+                                                       FontSize="{Binding DataContext.TextSize, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                                <ItemsControl ItemsSource="{Binding DataContext.PowerSubmenuItems, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              HorizontalAlignment="Center" Margin="0,0,0,4">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="ItemsControl">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSubmenuOpen}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource PowerItemStyle}" ToolTip="{Binding Name}"
+                                                    Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <Image Width="{Binding DataContext.PowerIconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       Height="{Binding DataContext.PowerIconSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       Source="{Binding Icon}" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ItemsControl x:Name="GroupsList" ItemTemplate="{StaticResource GroupCardTemplate}"
+                          HorizontalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <local:EqualSizePanel Vertical="{Binding IsVertical}" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </StackPanel>
+    </Grid>
+</Window>
